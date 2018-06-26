@@ -19,11 +19,9 @@ namespace PathTree.Tests
 			Assert.IsNullOrEmpty(node.Segment);
 		}
 
-		[Test]
-		public void CreateSimpleTree()
+		static PathTree CreateTree()
 		{
 			var tree = new PathTree();
-			PathTreeNode root, a, b, c, d, e, f, f1, f2, g, g1, g2, x, y, z;
 
 			// a
 			// + b
@@ -45,6 +43,16 @@ namespace PathTree.Tests
 			tree.AddNode(Path.Combine("a", "b", "f", "f1"));
 			tree.AddNode(Path.Combine("a", "b", "f", "f2"));
 			tree.AddNode(Path.Combine("a", "b", "g", "g2"));
+
+			return tree;
+		}
+
+		[Test]
+		public void CreateSimpleTree()
+		{
+			var tree = CreateTree();
+
+			PathTreeNode root, a, b, c, d, e, f, f1, f2, g, g1, g2, x, y, z;
 
 			root = tree.rootNode;
 			a = root.FirstChild;
@@ -144,16 +152,54 @@ namespace PathTree.Tests
 		[Test]
 		public void AssertNodeRemoved()
 		{
-			var tree = new PathTree();
+			var tree = CreateTree();
 
-			var b = tree.AddNode(Path.Combine("a", "b"));
+			var b = tree.FindNode(Path.Combine("a", "b"));
+			Assert.AreEqual(nameof(b), b.Segment);
 
-			var firstA = tree.FindNode("a");
-			var newA = tree.AddNode("a");
+			// b -> c
+			var c = b.FirstChild;
+			Assert.AreEqual(nameof(c), c.Segment);
 
-			Assert.AreSame(firstA, newA);
-			Assert.AreSame(b, firstA.FirstChild);
-			Assert.AreSame(b, firstA.LastChild);
+			// Remove first
+			var c2 = tree.RemoveNode(Path.Combine("a", "b", "c"));
+			Assert.AreSame(c, c2);
+
+			Assert.IsNull(tree.FindNode(Path.Combine("a", "b", "c")));
+
+			// b -> d
+			var d = b.FirstChild;
+			Assert.AreNotSame(c, d);
+			Assert.AreEqual(nameof(d), d.Segment);
+
+			// b -> g
+			var g = b.LastChild;
+			Assert.AreEqual(nameof(g), g.Segment);
+
+			// Remove last
+			var g2 = tree.RemoveNode(Path.Combine("a", "b", "g"));
+			Assert.AreSame(g, g2);
+
+			Assert.IsNull(tree.FindNode(Path.Combine("a", "b", "g")));
+			Assert.IsNull(tree.FindNode(Path.Combine("a", "b", "g", "g1")));
+			Assert.IsNull(tree.FindNode(Path.Combine("a", "b", "g", "g2")));
+
+			// b -> f
+			var f = b.LastChild;
+			Assert.AreEqual(nameof(f), f.Segment);
+
+			// Remove middle
+			var e = tree.FindNode(Path.Combine("a", "b", "e"));
+			Assert.IsNotNull(e);
+
+			var e2 = tree.RemoveNode(Path.Combine("a", "b", "e"));
+			Assert.AreSame(e, e2);
+
+			Assert.IsNull(tree.FindNode(Path.Combine("a", "b", "e")));
+
+			Assert.AreSame(d, b.FirstChild);
+			Assert.AreSame(f, b.LastChild);
+			Assert.AreSame(f, d.Next);
 		}
 	}
 }

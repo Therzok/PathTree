@@ -110,10 +110,12 @@ namespace PathTree
 				if (parent.FirstChild == result)
 					parent.FirstChild = result.Next;
 				if (parent.LastChild == result)
-					parent.LastChild = result.Next;
+					parent.LastChild = previousNode;
 
 				if (previousNode != null)
-					previousNode.Next = result;
+					previousNode.Next = result.Next;
+
+				result.Next = null;
 			}
 			return result;
 		}
