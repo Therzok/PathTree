@@ -1,0 +1,23 @@
+
+Microsoft Visual Studio Solution File, Format Version 12.00
+# Visual Studio 15
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "PathTree", "PathTree\PathTree.csproj", "{03E1151D-73D2-4EE1-A5B6-03C9D2D874D2}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "PathTree.Tests", "PathTree.Tests\PathTree.Tests.csproj", "{52DDFB55-83AB-4807-BDD9-BE518B56A59A}"
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|Any CPU = Debug|Any CPU
+		Release|Any CPU = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{03E1151D-73D2-4EE1-A5B6-03C9D2D874D2}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{03E1151D-73D2-4EE1-A5B6-03C9D2D874D2}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{03E1151D-73D2-4EE1-A5B6-03C9D2D874D2}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{03E1151D-73D2-4EE1-A5B6-03C9D2D874D2}.Release|Any CPU.Build.0 = Release|Any CPU
+		{52DDFB55-83AB-4807-BDD9-BE518B56A59A}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{52DDFB55-83AB-4807-BDD9-BE518B56A59A}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{52DDFB55-83AB-4807-BDD9-BE518B56A59A}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{52DDFB55-83AB-4807-BDD9-BE518B56A59A}.Release|Any CPU.Build.0 = Release|Any CPU
+	EndGlobalSection
+EndGlobal
