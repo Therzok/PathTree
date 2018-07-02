@@ -1,9 +1,34 @@
-﻿using System;
+﻿//
+// PathTreeTests.cs
+//
+// Author:
+//       Marius Ungureanu <maungu@microsoft.com>
+//
+// Copyright (c) 2018 Microsoft Inc.
+//
+// Permission is hereby granted, free of charge, to any person obtaining a copy
+// of this software and associated documentation files (the "Software"), to deal
+// in the Software without restriction, including without limitation the rights
+// to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+// copies of the Software, and to permit persons to whom the Software is
+// furnished to do so, subject to the following conditions:
+//
+// The above copyright notice and this permission notice shall be included in
+// all copies or substantial portions of the Software.
+//
+// THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+// IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+// FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+// AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+// LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+// OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
+// THE SOFTWARE.
+using System;
 using System.IO;
 using System.Linq;
 using NUnit.Framework;
 
-namespace PathTree.Tests
+namespace PathTree
 {
 	[TestFixture]
 	public class PathTreeTests
@@ -11,15 +36,15 @@ namespace PathTree.Tests
 		static object id = new object();
 
 		[Test]
-		public void CreateEmptyTree ()
+		public void CreateEmptyTree()
 		{
 			var tree = new PathTree();
 			var node = tree.rootNode;
-			
+
 			Assert.IsNull(node.FirstChild);
 			Assert.IsNull(node.LastChild);
 			Assert.IsNull(node.Next);
-			Assert.IsNullOrEmpty(node.Segment);
+			Assert.That(node.Segment, Is.Not.Null.Or.Empty);
 		}
 
 		static PathTree CreateTree()
@@ -70,17 +95,20 @@ namespace PathTree.Tests
 			g1 = g.FirstChild;
 			g2 = g1.Next;
 
-			// rootNode -> a, z
+			// rootNode -> a
 			Assert.AreEqual(nameof(a), a.Segment);
 			Assert.IsNull(a.Next);
 			Assert.AreSame(a, root.LastChild);
 			Assert.AreEqual(1, root.ChildrenCount);
+			Assert.IsNull(a.Previous);
+			Assert.AreSame(root, a.Parent);
 
 			// a -> b
 			Assert.AreEqual(nameof(b), b.Segment);
 			Assert.AreSame(a.LastChild, b);
 			Assert.IsNull(b.Next);
 			Assert.AreEqual(1, a.ChildrenCount);
+			Assert.AreSame(a, b.Parent);
 
 			// b -> c, d, e, f, g
 			Assert.AreEqual(nameof(c), c.Segment);
@@ -88,6 +116,11 @@ namespace PathTree.Tests
 			Assert.AreEqual(nameof(e), e.Segment);
 			Assert.AreEqual(nameof(f), f.Segment);
 			Assert.AreEqual(nameof(g), g.Segment);
+			Assert.AreSame(b, c.Parent);
+			Assert.AreSame(b, d.Parent);
+			Assert.AreSame(b, e.Parent);
+			Assert.AreSame(b, f.Parent);
+			Assert.AreSame(b, g.Parent);
 			Assert.AreEqual(5, b.ChildrenCount);
 
 			Assert.AreSame(b.LastChild, g);
@@ -108,6 +141,12 @@ namespace PathTree.Tests
 			Assert.AreEqual(2, f.ChildrenCount);
 			Assert.AreEqual(0, f1.ChildrenCount);
 			Assert.AreEqual(0, f2.ChildrenCount);
+			Assert.AreSame(f, f1.Parent);
+			Assert.AreSame(f, f2.Parent);
+
+			Assert.IsNull(f1.Previous);
+			Assert.AreSame(f1, f2.Previous);
+			Assert.AreSame(f2, f1.Next);
 			Assert.IsNull(f2.Next);
 
 			// g -> g1, g2
@@ -117,8 +156,14 @@ namespace PathTree.Tests
 			Assert.AreEqual(2, g.ChildrenCount);
 			Assert.AreEqual(0, g1.ChildrenCount);
 			Assert.AreEqual(0, g2.ChildrenCount);
-			Assert.IsNull(g2.Next);
 
+			Assert.AreSame(g, g1.Parent);
+			Assert.AreSame(g, g2.Parent);
+
+			Assert.IsNull(g1.Previous);
+			Assert.AreSame(g1, g2.Previous);
+			Assert.AreSame(g2, g1.Next);
+			Assert.IsNull(g2.Next);
 			// a
 			// ...
 			// z
@@ -157,7 +202,7 @@ namespace PathTree.Tests
 		{
 			var tree = new PathTree();
 
-			var b = tree.AddNode(Path.Combine ("a", "b"), id);
+			var b = tree.AddNode(Path.Combine("a", "b"), id);
 
 			var firstA = tree.FindNode("a");
 			var newA = tree.AddNode("a", id);
@@ -194,13 +239,34 @@ namespace PathTree.Tests
 			var g = b.LastChild;
 			Assert.AreEqual(nameof(g), g.Segment);
 
-			// Remove last
-			var g2 = tree.RemoveNode(Path.Combine("a", "b", "g"), id);
-			Assert.AreSame(g, g2);
+			// Remove g
+			var gRemoved = tree.RemoveNode(Path.Combine("a", "b", "g"), id);
+			Assert.AreSame(g, gRemoved);
 
-			Assert.IsNull(tree.FindNode(Path.Combine("a", "b", "g")));
+			Assert.IsNotNull(tree.FindNode(Path.Combine("a", "b", "g")));
+			Assert.IsFalse(gRemoved.IsLive);
+
+			var g1 = tree.FindNode(Path.Combine("a", "b", "g", "g1"));
+			Assert.IsNotNull(g1);
+			Assert.IsTrue(g1.IsLive);
+
+			var g2 = tree.FindNode(Path.Combine("a", "b", "g", "g2"));
+			Assert.IsNotNull(g2);
+			Assert.IsTrue(g2.IsLive);
+
+			// Remove g1
+			var g1Removed = tree.RemoveNode(Path.Combine("a", "b", "g", "g1"), id);
+			Assert.AreSame(g1, g1Removed);
+
 			Assert.IsNull(tree.FindNode(Path.Combine("a", "b", "g", "g1")));
+			Assert.AreSame(g2, g.FirstChild);
+
+			// Remove g2
+			var g2Removed = tree.RemoveNode(Path.Combine("a", "b", "g", "g2"), id);
+			Assert.AreSame(g2, g2Removed);
+
 			Assert.IsNull(tree.FindNode(Path.Combine("a", "b", "g", "g2")));
+			Assert.IsNull(tree.FindNode(Path.Combine("a", "b", "g")));
 
 			// b -> f
 			var f = b.LastChild;
@@ -225,29 +291,29 @@ namespace PathTree.Tests
 		{
 			var tree = CreateTree();
 
-			var b = tree.FindNode(Path.Combine("a", "b"));
-			Assert.AreEqual(nameof(b), b.Segment);
+			var c = tree.FindNode(Path.Combine("a", "b", "c"));
+			Assert.AreEqual(nameof(c), c.Segment);
 
 			var newId = new object();
 
-			var b2 = tree.AddNode(Path.Combine("a", "b"), newId);
-			Assert.AreSame(b, b2);
-			Assert.IsNotNull(b2);
+			var c2 = tree.AddNode(Path.Combine("a", "b", "c"), newId);
+			Assert.AreSame(c, c2);
+			Assert.IsNotNull(c2);
 
-			var b3 = tree.RemoveNode(Path.Combine("a", "b"), id);
-			Assert.AreSame(b2, b3);
-			Assert.IsNotNull(b3);
+			var c3 = tree.RemoveNode(Path.Combine("a", "b", "c"), id);
+			Assert.AreSame(c2, c3);
+			Assert.IsNotNull(c3);
 
-			var b4 = tree.FindNode(Path.Combine("a", "b"));
-			Assert.AreSame(b3, b4);
-			Assert.IsNotNull(b4);
+			var c4 = tree.FindNode(Path.Combine("a", "b", "c"));
+			Assert.AreSame(c3, c4);
+			Assert.IsNotNull(c4);
 
-			var b5 = tree.RemoveNode(Path.Combine("a", "b"), newId);
-			Assert.AreSame(b4, b5);
-			Assert.IsNotNull(b5);
+			var c5 = tree.RemoveNode(Path.Combine("a", "b", "c"), newId);
+			Assert.AreSame(c4, c5);
+			Assert.IsNotNull(c5);
 
-			var bRemoved = tree.FindNode(Path.Combine("a", "b"));
-			Assert.IsNull(bRemoved);
+			var cRemoved = tree.FindNode(Path.Combine("a", "b", "c"));
+			Assert.IsNull(cRemoved);
 		}
 
 		[Test]
@@ -257,7 +323,7 @@ namespace PathTree.Tests
 
 			var nodes = tree.Normalize(1).ToArray();
 			Assert.AreEqual(1, nodes.Length);
- 			Assert.AreEqual("b", nodes[0].Segment);
+			Assert.AreEqual("b", nodes[0].Segment);
 
 			nodes = tree.Normalize(2).ToArray();
 			Assert.AreEqual(1, nodes.Length);
@@ -337,6 +403,34 @@ namespace PathTree.Tests
 			nodes = tree.Normalize(7).ToArray();
 			Assert.AreEqual(1, nodes.Length);
 			Assert.AreEqual("a", nodes[0].Segment);
+		}
+
+		[Test]
+		public void CreateTreeAndDestructItNodeByNode()
+		{
+			var tree = new PathTree();
+			var id1 = new object();
+			var id2 = new object();
+
+			var a = tree.AddNode("a", id1);
+			var b = tree.AddNode(Path.Combine("a", "b"), id1);
+			var c = tree.AddNode(Path.Combine("a", "b", "c"), id1);
+
+			var b2 = tree.AddNode(Path.Combine("a", "b"), id2);
+			Assert.AreSame(b, b2);
+			Assert.AreSame(b.FirstChild, c);
+
+			var b3 = tree.RemoveNode(Path.Combine("a", "b"), id1);
+
+			Assert.IsNotNull(tree.FindNode(Path.Combine("a", "b")));
+			Assert.AreSame(c, b3.FirstChild);
+
+			var b4 = tree.RemoveNode(Path.Combine("a", "b"), id2);
+			Assert.IsNotNull(tree.FindNode(Path.Combine("a", "b")));
+			Assert.AreSame(c, b3.FirstChild);
+
+			tree.RemoveNode(Path.Combine("a", "b", "c"), id1);
+			Assert.IsNull(a.FirstChild);
 		}
 	}
 }

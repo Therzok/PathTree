@@ -32,13 +32,13 @@ namespace PathTree
 	{
 		internal readonly PathTreeNode rootNode = new PathTreeNode("", 0, 0);
 
-		public PathTreeNode FindNode (string path)
+		public PathTreeNode FindNode(string path)
 		{
 			TryFind(path, out var result, out _, out _, out _);
 			return result;
 		}
 
-		public IEnumerable<PathTreeNode> Normalize (int maxLeafs)
+		public IEnumerable<PathTreeNode> Normalize(int maxLeafs)
 		{
 			Queue<PathTreeNode> queue = new Queue<PathTreeNode>();
 
@@ -50,7 +50,8 @@ namespace PathTree
 				{
 					yielded++;
 					yield return child;
-				} else
+				}
+				else
 					queue.Enqueue(child);
 
 				child = child.Next;
@@ -85,7 +86,7 @@ namespace PathTree
 			}
 		}
 
-		bool TryFind (string path, out PathTreeNode result, out PathTreeNode parent, out PathTreeNode previousNode, out int lastIndex)
+		bool TryFind(string path, out PathTreeNode result, out PathTreeNode parent, out PathTreeNode previousNode, out int lastIndex)
 		{
 			lastIndex = 0;
 
@@ -130,7 +131,7 @@ namespace PathTree
 			return false;
 		}
 
-		public PathTreeNode AddNode (string path, object id)
+		public PathTreeNode AddNode(string path, object id)
 		{
 			if (TryFind(path, out var result, out var parent, out var previousNode, out var lastIndex))
 			{
@@ -155,42 +156,79 @@ namespace PathTree
 
 			if (result.UnregisterId(id) && !result.IsLive)
 			{
-				if (parent.FirstChild == result)
-					parent.FirstChild = result.Next;
-				if (parent.LastChild == result)
-					parent.LastChild = previousNode;
-				parent.ChildrenCount -= 1;
+				var nodeToRemove = result;
 
-				if (previousNode != null)
-					previousNode.Next = result.Next;
+				while (nodeToRemove != rootNode && IsDeadSubtree(nodeToRemove))
+				{
 
-				result.Next = null;
+					parent.ChildrenCount -= 1;
+
+					if (parent.FirstChild == nodeToRemove)
+						parent.FirstChild = nodeToRemove.Next;
+
+					if (nodeToRemove.Previous != null)
+						nodeToRemove.Previous.Next = nodeToRemove.Next;
+
+					if (nodeToRemove.Next != null)
+						nodeToRemove.Next.Previous = nodeToRemove.Previous;
+
+					nodeToRemove.Next = null;
+					nodeToRemove.Previous = null;
+					nodeToRemove.Parent = null;
+
+					nodeToRemove = parent;
+					parent = nodeToRemove.Parent;
+				}
 			}
+
 			return result;
+		}
+
+		bool IsDeadSubtree(PathTreeNode node)
+		{
+			// We look for the first live child
+			var stack = new Stack<PathTreeNode>();
+			stack.Push(node);
+
+			while (stack.Count != 0)
+			{
+				node = stack.Pop();
+				if (node.IsLive)
+					return false;
+
+				var child = node.FirstChild;
+
+				while (child != null)
+				{
+					stack.Push(child);
+					child = child.Next;
+				}
+			}
+			return true;
 		}
 
 		void InsertNode(PathTreeNode node, PathTreeNode parentNode, PathTreeNode previousNode)
 		{
 			parentNode.ChildrenCount += 1;
+
+			node.Parent = parentNode;
 			if (previousNode == null)
 			{
 				// We're inserting at the beginning.
 				node.Next = parentNode.FirstChild;
 				parentNode.FirstChild = node;
-
-				// We didn't have a child node, set it.
-				if (node.Next == null)
-					parentNode.LastChild = node;
 				return;
 			}
 
 			// We are appending inbetween other nodes
 			var next = previousNode.Next;
-			previousNode.Next = node;
-			node.Next = next;
 
-			if (parentNode.LastChild == previousNode)
-				parentNode.LastChild = node;
+			previousNode.Next = node;
+			node.Previous = previousNode;
+
+			node.Next = next;
+			if (next != null)
+				next.Previous = node;
 		}
 	}
 }

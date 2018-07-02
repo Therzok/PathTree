@@ -6,8 +6,9 @@ namespace PathTree
 {
 	public sealed class PathTreeNode
 	{
+		public PathTreeNode Parent { get; set; }
 		public PathTreeNode FirstChild { get; set; }
-		public PathTreeNode LastChild { get; set; }
+		public PathTreeNode Previous { get; set; }
 		public PathTreeNode Next { get; set; }
 		public int ChildrenCount { get; set; }
 
@@ -20,6 +21,16 @@ namespace PathTree
 		public int Start { get; }
 		public int Length { get; }
 
+		internal PathTreeNode LastChild
+		{
+			get
+			{
+				var child = FirstChild;
+				while (child != null && child.Next != null)
+					child = child.Next;
+				return child;
+			}
+		}
 		internal string Segment => FullPath.Substring(Start, Length);
 
 		public PathTreeNode(string fullPath, int start, int length)
@@ -29,7 +40,7 @@ namespace PathTree
 			Length = length;
 		}
 
-		internal static (PathTreeNode root, PathTreeNode leaf) CreateSubTree (string path, int start)
+		internal static (PathTreeNode root, PathTreeNode leaf) CreateSubTree(string path, int start)
 		{
 			PathTreeNode lastNode = null, rootNode = null;
 
@@ -41,7 +52,8 @@ namespace PathTree
 
 				if (lastNode != null)
 				{
-					lastNode.FirstChild = lastNode.LastChild = node;
+					lastNode.FirstChild = node;
+					node.Parent = lastNode;
 					lastNode.ChildrenCount = 1;
 				}
 				else
