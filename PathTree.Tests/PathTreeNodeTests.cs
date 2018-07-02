@@ -7,18 +7,17 @@ namespace PathTree.Tests
 	[TestFixture]
 	public class PathTreeNodeTests
 	{
-		readonly string[] pathDatas = {
-			Path.Combine ("a", "b", "c"),
-			Path.Combine ("a", "b", "d"),
-			Path.Combine ("b", "c", "d")
+		string[] seps = {
+			"",
+			Path.DirectorySeparatorChar.ToString(),
 		};
 
-		[Test]
-		public void CreateSubTree()
+		[TestCaseSource(nameof(seps))]
+		public void CreateSubTree(string sep)
 		{
-			var path = Path.Combine("a", "b", "c");
+			var path = Path.Combine("a", "b", "c") + sep;
 
-			var (pathTreeNode, leaf) = PathTreeNode.CreateSubTree(path.Split(Path.DirectorySeparatorChar), 0);
+			var (pathTreeNode, leaf) = PathTreeNode.CreateSubTree(path, 0);
 			AssertPathTreeSubtree(pathTreeNode, "a", 2);
 			Assert.AreEqual(1, pathTreeNode.ChildrenCount);
 
@@ -45,9 +44,19 @@ namespace PathTree.Tests
 		[TestCase(1)] // Should not crash
 		public void EmptySubTrie(int startIndex)
 		{
-			var (node, leaf) = PathTreeNode.CreateSubTree(Array.Empty<string>(), startIndex);
+			var (node, leaf) = PathTreeNode.CreateSubTree(string.Empty, startIndex);
 			Assert.IsNull(node);
 			Assert.IsNull(leaf);
+		}
+
+		[Test]
+		public void JustSlash()
+		{
+			var (node, leaf) = PathTreeNode.CreateSubTree(Path.DirectorySeparatorChar.ToString (), 0);
+			Assert.IsNotNull(node);
+			Assert.AreSame(node, leaf);
+			Assert.AreEqual("", node.Segment);
+			Assert.AreEqual(Path.DirectorySeparatorChar.ToString(), node.FullPath);
 		}
 	}
 }

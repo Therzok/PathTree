@@ -23,21 +23,18 @@
 // LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 // THE SOFTWARE.
-using System;
 using System.Collections.Generic;
-using System.Diagnostics;
 using System.IO;
-using System.Linq;
 
 namespace PathTree
 {
 	public class PathTree
 	{
-		internal readonly PathTreeNode rootNode = new PathTreeNode("");
+		internal readonly PathTreeNode rootNode = new PathTreeNode("", 0, 0);
 
 		public PathTreeNode FindNode (string path)
 		{
-			TryFind(path, out var result, out _, out _, out _, out _);
+			TryFind(path, out var result, out _, out _, out _);
 			return result;
 		}
 
@@ -88,10 +85,9 @@ namespace PathTree
 			}
 		}
 
-		bool TryFind (string path, out PathTreeNode result, out PathTreeNode parent, out PathTreeNode previousNode, out string[] pathSegments, out int currentIndex)
+		bool TryFind (string path, out PathTreeNode result, out PathTreeNode parent, out PathTreeNode previousNode, out int lastIndex)
 		{
-			currentIndex = 0;
-			pathSegments = ToData(path);
+			lastIndex = 0;
 
 			parent = rootNode;
 			var currentNode = parent.FirstChild;
@@ -99,7 +95,8 @@ namespace PathTree
 
 			while (currentNode != null)
 			{
-				int comparisonResult = string.Compare(currentNode.Segment, pathSegments[currentIndex]);
+				int currentIndex = path.IndexOf(Path.DirectorySeparatorChar, lastIndex);
+				int comparisonResult = string.Compare(currentNode.FullPath, currentNode.Start, path, lastIndex, currentNode.Length);
 
 				// We need to insert in this node's position.
 				if (comparisonResult > 0)
@@ -114,10 +111,10 @@ namespace PathTree
 				}
 
 				// We found this segment in the tree.
-				currentIndex++;
+				lastIndex = currentIndex + 1;
 
 				// We found the node already, register the ID.
-				if (currentIndex == pathSegments.Length)
+				if (currentIndex == -1)
 				{
 					result = currentNode;
 					return true;
@@ -127,22 +124,22 @@ namespace PathTree
 				parent = currentNode;
 				previousNode = null;
 				currentNode = parent.FirstChild;
-
 			}
+
 			result = null;
 			return false;
 		}
 
 		public PathTreeNode AddNode (string path, object id)
 		{
-			if (TryFind(path, out var result, out var parent, out var previousNode, out var pathSegments, out var currentIndex))
+			if (TryFind(path, out var result, out var parent, out var previousNode, out var lastIndex))
 			{
 				result.RegisterId(id);
 				return result;
 			}
 
 			// At this point, we need to create a new node.
-			var (first, leaf) = PathTreeNode.CreateSubTree(pathSegments, currentIndex);
+			var (first, leaf) = PathTreeNode.CreateSubTree(path, lastIndex);
 			if (id != null)
 				leaf.RegisterId(id);
 
@@ -153,7 +150,7 @@ namespace PathTree
 
 		public PathTreeNode RemoveNode (string path, object id)
 		{
-			if (TryFind(path, out var result, out var parent, out var previousNode, out var pathSegments, out var currentIndex)) {
+			if (TryFind(path, out var result, out var parent, out var previousNode, out _)) {
 				if (result.UnregisterId(id) && !result.IsLive)
 				{
 					if (parent.FirstChild == result)
@@ -170,9 +167,6 @@ namespace PathTree
 			}
 			return result;
 		}
-
-			// TODO: Optimize this to not allocate, but reuse a string and indices.
-		string[] ToData(string path) => string.IsNullOrEmpty(path) ? Array.Empty<string>() : path.Split(Path.DirectorySeparatorChar);
 
 		void InsertNode(PathTreeNode node, PathTreeNode parentNode, PathTreeNode previousNode)
 		{
