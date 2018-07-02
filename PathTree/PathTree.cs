@@ -27,6 +27,7 @@ using System;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
+using System.Linq;
 
 namespace PathTree
 {
@@ -40,11 +41,52 @@ namespace PathTree
 			return result;
 		}
 
-		//public IEnumerable<PathTreeNode> Normalize (int maxLeafs)
-		//{
-		//	var node = rootNode;
+		public IEnumerable<PathTreeNode> Normalize (int maxLeafs)
+		{
+			Queue<PathTreeNode> queue = new Queue<PathTreeNode>();
 
-		//}
+			int yielded = 0;
+			var child = rootNode.FirstChild;
+			while (child != null)
+			{
+				if (child.IsLive)
+				{
+					yielded++;
+					yield return child;
+				} else
+					queue.Enqueue(child);
+
+				child = child.Next;
+			}
+			if (queue.Count == 0)
+				yield break;
+
+			while (yielded <= maxLeafs && queue.Count != 0)
+			{
+				var node = queue.Dequeue();
+
+				if (node.ChildrenCount + yielded - 1 < maxLeafs)
+				{
+					child = node.FirstChild;
+					while (child != null)
+					{
+						if (child.IsLive)
+						{
+							yielded++;
+							yield return child;
+						}
+						else
+							queue.Enqueue(child);
+						child = child.Next;
+					}
+				}
+				else
+				{
+					yielded++;
+					yield return node;
+				}
+			}
+		}
 
 		bool TryFind (string path, out PathTreeNode result, out PathTreeNode parent, out PathTreeNode previousNode, out string[] pathSegments, out int currentIndex)
 		{
@@ -91,31 +133,40 @@ namespace PathTree
 			return false;
 		}
 
-		public PathTreeNode AddNode (string path)
+		public PathTreeNode AddNode (string path, object id)
 		{
 			if (TryFind(path, out var result, out var parent, out var previousNode, out var pathSegments, out var currentIndex))
+			{
+				result.RegisterId(id);
 				return result;
+			}
 
 			// At this point, we need to create a new node.
 			var (first, leaf) = PathTreeNode.CreateSubTree(pathSegments, currentIndex);
+			if (id != null)
+				leaf.RegisterId(id);
 
 			InsertNode(first, parent, previousNode);
 
 			return leaf;
 		}
 
-		public PathTreeNode RemoveNode (string path)
+		public PathTreeNode RemoveNode (string path, object id)
 		{
 			if (TryFind(path, out var result, out var parent, out var previousNode, out var pathSegments, out var currentIndex)) {
-				if (parent.FirstChild == result)
-					parent.FirstChild = result.Next;
-				if (parent.LastChild == result)
-					parent.LastChild = previousNode;
+				if (result.UnregisterId(id) && !result.IsLive)
+				{
+					if (parent.FirstChild == result)
+						parent.FirstChild = result.Next;
+					if (parent.LastChild == result)
+						parent.LastChild = previousNode;
+					parent.ChildrenCount -= 1;
 
-				if (previousNode != null)
-					previousNode.Next = result.Next;
+					if (previousNode != null)
+						previousNode.Next = result.Next;
 
-				result.Next = null;
+					result.Next = null;
+				}
 			}
 			return result;
 		}
@@ -125,6 +176,7 @@ namespace PathTree
 
 		void InsertNode(PathTreeNode node, PathTreeNode parentNode, PathTreeNode previousNode)
 		{
+			parentNode.ChildrenCount += 1;
 			if (previousNode == null)
 			{
 				// We're inserting at the beginning.

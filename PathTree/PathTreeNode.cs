@@ -3,13 +3,17 @@ using System.Collections.Generic;
 
 namespace PathTree
 {
-	public class PathTreeNode
+	public sealed class PathTreeNode
 	{
 		public PathTreeNode FirstChild { get; set; }
 		public PathTreeNode LastChild { get; set; }
 		public PathTreeNode Next { get; set; }
+		public int ChildrenCount { get; set; }
 
-		//readonly List<object> ids = new List<object>();
+		readonly List<object> ids = new List<object>();
+		internal void RegisterId(object id) => ids.Add(id);
+		internal bool UnregisterId(object id) => ids.Remove(id);
+		public bool IsLive => ids.Count != 0;
 
 		public string Segment { get; }
 
@@ -23,11 +27,12 @@ namespace PathTree
 			PathTreeNode lastNode = null, rootNode = null;
 			for (int i = startIndex; i < pathSegments.Length; ++i)
 			{
-				var node = new PathTreeNode(pathSegments[i]);
+				var node = new PathTreeNode (pathSegments[i]);
 
-				if (lastNode != null)
+				if (lastNode != null) {
 					lastNode.FirstChild = lastNode.LastChild = node;
-				else
+					lastNode.ChildrenCount = 1;
+				} else
 					rootNode = node;
 
 				lastNode = node;
