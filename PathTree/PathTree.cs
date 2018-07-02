@@ -148,22 +148,23 @@ namespace PathTree
 			return leaf;
 		}
 
-		public PathTreeNode RemoveNode (string path, object id)
+		public PathTreeNode RemoveNode(string path, object id)
 		{
-			if (TryFind(path, out var result, out var parent, out var previousNode, out _)) {
-				if (result.UnregisterId(id) && !result.IsLive)
-				{
-					if (parent.FirstChild == result)
-						parent.FirstChild = result.Next;
-					if (parent.LastChild == result)
-						parent.LastChild = previousNode;
-					parent.ChildrenCount -= 1;
+			if (!TryFind(path, out var result, out var parent, out var previousNode, out _))
+				return null;
 
-					if (previousNode != null)
-						previousNode.Next = result.Next;
+			if (result.UnregisterId(id) && !result.IsLive)
+			{
+				if (parent.FirstChild == result)
+					parent.FirstChild = result.Next;
+				if (parent.LastChild == result)
+					parent.LastChild = previousNode;
+				parent.ChildrenCount -= 1;
 
-					result.Next = null;
-				}
+				if (previousNode != null)
+					previousNode.Next = result.Next;
+
+				result.Next = null;
 			}
 			return result;
 		}
