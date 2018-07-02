@@ -36,20 +36,31 @@ Given a tree like:
 ```
 
 Depending on how many nodes we want to watch, we have the following results for `tree.Normalize(count)` where count represents the number of watchers:
-1 watcher   - `/a/b`
-2 watchers  - `/a/b`
-3 watchers  - `/a/b`
-4 watchers  - `/a/b`
-5 watchers  - `/a/b/c, /a/b/d, /a/b/e, /a/b/f, /a/b/g`
-6 watchers  - `/a/b/c, /a/b/d, /a/b/e, /a/b/f, /a/b/g`
-7 watchers  - `/a/b/c, /a/b/d, /a/b/e, /a/b/f, /a/b/g`
-8 watchers  - `/a/b/c, /a/b/d, /a/b/e, /a/b/f, /a/b/g`
+
+`1 watcher   - /a/b`
+
+`2 watchers  - /a/b`
+
+`3 watchers  - /a/b`
+
+`4 watchers  - /a/b`
+
+`5 watchers  - /a/b/c, /a/b/d, /a/b/e, /a/b/f, /a/b/g`
+
+`6 watchers  - /a/b/c, /a/b/d, /a/b/e, /a/b/f, /a/b/g`
 
 If we removed the live registrations of `f` and `g`, we would get the following results:
-1 watcher   - `/a/b`
-2 watchers  - `/a/b`
-3 watchers  - `/a/b`
-4 watchers  - `/a/b`
-5 watchers  - `/a/b/c, /a/b/d, /a/b/e, /a/b/f, /a/b/g`
-6 watchers  - `/a/b/c, /a/b/d, /a/b/e, /a/b/g, /a/b/f1, /a/b/f2`
-7 watchers  - `/a/b/c, /a/b/d, /a/b/e, /a/b/f1, /a/b/f2, /a/b/g1, /a/b/g2`
+
+`1 watcher   - /a/b`
+
+`2 watchers  - /a/b`
+
+`3 watchers  - /a/b`
+
+`4 watchers  - /a/b`
+
+`5 watchers  - /a/b/c, /a/b/d, /a/b/e, /a/b/f, /a/b/g`
+
+`6 watchers  - /a/b/c, /a/b/d, /a/b/e, /a/b/g, /a/b/f1, /a/b/f2`
+
+`7 watchers  - /a/b/c, /a/b/d, /a/b/e, /a/b/f1, /a/b/f2, /a/b/g1, /a/b/g2`
