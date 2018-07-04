@@ -37,7 +37,7 @@ namespace PathTree
 			Path.DirectorySeparatorChar.ToString(),
 		};
 
-		static readonly string prefix = Platform.IsWindows ? "C:" : "/";
+		static readonly string prefix = Platform.IsWindows ? "C:\\" : "/";
 		static string MakePath(params string[] segments) => Path.Combine(prefix, Path.Combine(segments));
 
 		[TestCaseSource(nameof(seps))]
@@ -45,7 +45,20 @@ namespace PathTree
 		{
 			var path = MakePath("a", "b", "c") + sep;
 
-			var (a, leaf) = PathTreeNode.CreateSubTree(path, 0);
+			var (first, leaf) = PathTreeNode.CreateSubTree(path, 0);
+
+            PathTreeNode a;
+            if (Platform.IsWindows)
+            {
+                AssertPathTreeSubtree(first, "C:");
+                Assert.AreEqual(1, first.ChildrenCount);
+                a = first.FirstChild;
+            }
+            else
+            {
+                a = first;
+            }
+
 			AssertPathTreeSubtree(a, "a");
 			Assert.AreEqual(1, a.ChildrenCount);
 

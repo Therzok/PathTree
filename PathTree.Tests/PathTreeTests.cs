@@ -50,11 +50,11 @@ namespace PathTree
 			Assert.IsNull(node.FirstChild);
 			Assert.IsNull(node.LastChild);
 			Assert.IsNull(node.Next);
-			Assert.That(node.Segment, Is.Not.Null.Or.Empty);
+			Assert.That(node.FullPath, Is.Not.Null.Or.Empty);
 		}
 
 
-		static readonly string prefix = Platform.IsWindows ? "C:" : "/";
+		static readonly string prefix = Platform.IsWindows ? "C:\\" : "/";
 		static string MakePath(params string[] segments) => Path.Combine(prefix, Path.Combine(segments));
 
 		static PathTree CreateTree()
@@ -453,7 +453,7 @@ namespace PathTree
 			tree.RemoveNode(prefix, id);
 
 			var node = tree.FindNode(prefix);
-			if (Core.Platform.IsWindows)
+			if (Platform.IsWindows)
 			{
 				Assert.IsNull(node);
 			}
