@@ -30,7 +30,19 @@ namespace PathTree
 {
 	public class PathTree
 	{
-		internal readonly PathTreeNode rootNode = new PathTreeNode("", 0, 0);
+		internal readonly PathTreeNode rootNode;
+
+		public PathTree()
+		{
+			rootNode = new PathTreeNode("", 0, 1);
+			if (!Platform.IsWindows)
+			{
+				rootNode.FirstChild = new PathTreeNode("/", 0, 0)
+				{
+					Parent = rootNode,
+				};
+			}
+		}
 
 		public PathTreeNode FindNode(string path)
 		{
@@ -45,6 +57,7 @@ namespace PathTree
 			// Otherwise, we keep looking for live nodes in a node's children.
 			// If the amount of children a node has exceeds the maximum amount of leaves
 			// we want, we just return the node itself, even if it's not live.
+
 			var queue = new Queue<PathTreeNode>();
 
 			int yielded = 0;
@@ -120,7 +133,7 @@ namespace PathTree
 				lastIndex = currentIndex + 1;
 
 				// We found the node already, register the ID.
-				if (currentIndex == -1)
+				if (currentIndex == -1 || lastIndex == path.Length)
 				{
 					result = currentNode;
 					return true;
@@ -156,14 +169,15 @@ namespace PathTree
 
 		public PathTreeNode RemoveNode(string path, object id)
 		{
-			if (!TryFind(path, out var result, out var parent, out var previousNode, out _))
+			if (!TryFind(path, out PathTreeNode result, out var parent, out var previousNode, out _))
 				return null;
 
 			if (result.UnregisterId(id) && !result.IsLive)
 			{
 				var nodeToRemove = result;
+				var lastToRemove = Platform.IsWindows ? rootNode : rootNode.FirstChild;
 
-				while (nodeToRemove != rootNode && IsDeadSubtree(nodeToRemove))
+				while (nodeToRemove != lastToRemove && IsDeadSubtree(nodeToRemove))
 				{
 					parent.ChildrenCount -= 1;
 

@@ -37,10 +37,13 @@ namespace PathTree
 			Path.DirectorySeparatorChar.ToString(),
 		};
 
+		static readonly string prefix = Platform.IsWindows ? "C:" : "/";
+		static string MakePath(params string[] segments) => Path.Combine(prefix, Path.Combine(segments));
+
 		[TestCaseSource(nameof(seps))]
 		public void CreateSubTree(string sep)
 		{
-			var path = Path.Combine("a", "b", "c") + sep;
+			var path = MakePath("a", "b", "c") + sep;
 
 			var (a, leaf) = PathTreeNode.CreateSubTree(path, 0);
 			AssertPathTreeSubtree(a, "a");
@@ -80,10 +83,8 @@ namespace PathTree
 		public void JustSlash()
 		{
 			var (node, leaf) = PathTreeNode.CreateSubTree(Path.DirectorySeparatorChar.ToString(), 0);
-			Assert.IsNotNull(node);
-			Assert.AreSame(node, leaf);
-			Assert.AreEqual("", node.Segment);
-			Assert.AreEqual(Path.DirectorySeparatorChar.ToString(), node.FullPath);
+			Assert.IsNull(node);
+			Assert.IsNull(leaf);
 		}
 	}
 }
